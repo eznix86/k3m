@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "k3m"
+version = "0.1.10"
+description = "Lightweight k3s cluster manager"
+authors = ["Bruno Bernard <brunobernard@duck.com>"]
+readme = "README.md"
+packages = [{include = "k3m", from = "src"}]
+license = "GPL-3.0-or-later"
+repository = "https://github.com/eznix86/k3m"
+keywords = ["k3s", "kubernetes", "cluster", "multipass", "devops"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Software Development :: Build Tools"
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+click = "^8.1.7"
+rich = "^13.7.0"
+pydantic = "^2.6.3"
+halo = "^0.0.31"
+
+[tool.poetry.scripts]
+k3m = "k3m.console:cli"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
