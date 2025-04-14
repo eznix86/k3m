@@ -1,64 +1,45 @@
+import contextlib
 import subprocess
 import sys
-from typing import Optional, NoReturn
+from typing import Optional
 from rich.console import Console
 from halo import Halo
 
 console = Console()
 
-def abort_if(condition: bool, message: Optional[str] = None) -> None:
-    """Abort the program if the condition is True"""
-    if condition:
-        if message:
-            console.print(f"[red]Error:[/red] {message}")
-        sys.exit(1)
+def get_multipass_path() -> str:
+    result = subprocess.run(['which', 'multipass'], capture_output=True, text=True)
+    return result.stdout.strip()
 
-def check_multipass_status() -> tuple[bool, str]:
-    """Check multipass status and return (is_available, error_message)"""
-    try:
-        # Check if multipass is installed
-        result = subprocess.run(['which', 'multipass'], capture_output=True, text=True)
-        if result.returncode != 0:
-            return False, "Multipass is not installed. Install it with: brew install multipass"
 
-        multipass_path = result.stdout.strip()
-        if not multipass_path:
-            return False, "Multipass installation is corrupted. Try reinstalling: brew reinstall multipass"
+def check_multipass_access_available() -> bool:
+    result = subprocess.run([get_multipass_path(), 'list'], capture_output=True, text=True)
+    return result.returncode == 0
 
-        # Check if daemon is running
-        version_result = subprocess.run([multipass_path, 'version'], capture_output=True, text=True)
-        if version_result.returncode != 0:
-            return False, "Multipass daemon is not running. Try: multipass version"
-
-        # Check if we can list instances
-        list_result = subprocess.run([multipass_path, 'list'], capture_output=True, text=True)
-        if list_result.returncode != 0:
-            if 'permission denied' in list_result.stderr.lower():
-                return False, "Permission denied. Ensure you have the necessary permissions to use multipass."
-            return False, f"Multipass is not working properly: {list_result.stderr}"
-
-        return True, ""
-    except Exception as e:
-        return False, f"Unexpected error checking multipass: {str(e)}"
+def check_multipass_status() -> bool:
+    multipass_path = get_multipass_path()
+    if not multipass_path:
+        return False
+    
+    return check_multipass_access_available()
 
 def ensure_multipass() -> None:
     """Ensure multipass is available and properly configured"""
-    is_available, error_message = check_multipass_status()
-    if not is_available:
-        console.print(f"[red]Error:[/red] {error_message}")
-        console.print("\nFor more help, visit: https://multipass.run/docs")
+    if not check_multipass_status():
+        console.print(f"[red]Error:[/red] Multipass is not installed or not accessible")
+        console.print("\nFor more help, visit: https://canonical.com/multipass/install")
         sys.exit(1)
 
 def process(cmd: str, message: Optional[str] = None, on_success: Optional[str] = None) -> str:
     """Run a shell command with Halo spinner for status indication"""
     spinner = Halo(text=message or "Processing...", spinner='dots')
+    spinner.start()
     try:
-        spinner.start()
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         
         if result.returncode != 0:
             spinner.fail(f"Error: {result.stderr}")
-            raise RuntimeError(f"Command failed: {cmd}")
+            raise RuntimeError(f"Command failed: {cmd}\nError: {result.stderr}")
         
         if on_success:
             spinner.succeed(on_success)
@@ -67,8 +48,5 @@ def process(cmd: str, message: Optional[str] = None, on_success: Optional[str] =
         
         return result.stdout.strip()
     except Exception as e:
-        spinner.fail(str(e))
+        spinner.fail(f"Error: {str(e)}")
         raise
-    finally:
-        if spinner.spinner_id:
-            spinner.stop()

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "k3m"
-version = "0.1.10"
+version = "0.2.0"
 description = "Lightweight k3s cluster manager"
 authors = ["Bruno Bernard <brunobernard@duck.com>"]
 readme = "README.md"
@@ -25,6 +25,7 @@ click = "^8.1.7"
 rich = "^13.7.0"
 pydantic = "^2.6.3"
 halo = "^0.0.31"
+peewee = "^3.17.9"
 
 [tool.poetry.scripts]
 k3m = "k3m.console:cli"
